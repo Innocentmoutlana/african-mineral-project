@@ -1,0 +1,1128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Investor Dashboard - African Critical Minerals</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Roboto', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+            min-height: 100vh;
+        }
+
+        .header {
+            background: white;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+            padding: 20px 0;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header h1 {
+            color: #667eea;
+            font-size: 26px;
+            font-weight: 700;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .user-badge {
+            background: #667eea;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .btn-logout {
+            background: #ef4444;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s;
+        }
+
+        .btn-logout:hover {
+            background: #dc2626;
+            transform: translateY(-2px);
+        }
+
+        .main-content {
+            max-width: 1400px;
+            margin: 30px auto;
+            padding: 0 20px;
+        }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 25px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 30px;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
+        }
+
+        .stat-card h3 {
+            color: #666;
+            font-size: 14px;
+            font-weight: 500;
+            margin-bottom: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .stat-card .value {
+            color: #667eea;
+            font-size: 36px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .stat-card .subtitle {
+            color: #999;
+            font-size: 12px;
+        }
+
+        .section {
+            background: white;
+            border-radius: 16px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .section h2 {
+            color: #667eea;
+            font-size: 22px;
+            margin-bottom: 25px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .section-icon {
+            width: 32px;
+            height: 32px;
+            background: #667eea;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 18px;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 400px;
+            margin-bottom: 20px;
+        }
+
+        .table-container {
+            overflow-x: auto;
+            margin-top: 15px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+        }
+
+        table th {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 14px;
+            text-align: left;
+            font-weight: 600;
+            border: none;
+        }
+
+        table td {
+            padding: 14px;
+            border-bottom: 1px solid #e9ecef;
+            color: #666;
+        }
+
+        table tr:hover {
+            background: #f8f9ff;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+
+        
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .error {
+            background: #fee;
+            color: #c33;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #e9ecef;
+            flex-wrap: wrap;
+        }
+
+        .tab {
+            padding: 12px 24px;
+            background: none;
+            border: none;
+            color: #666;
+            cursor: pointer;
+            font-weight: 500;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s;
+        }
+
+        .tab.active {
+            color: #667eea;
+            border-bottom-color: #667eea;
+        }
+
+        .tab:hover {
+            color: #667eea;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .country-card {
+            background: white;
+            border: 2px solid #e9ecef;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 15px;
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+
+        .country-card:hover {
+            border-color: #667eea;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.2);
+        }
+
+        .country-card h3 {
+            color: #667eea;
+            font-size: 20px;
+            margin-bottom: 15px;
+        }
+
+        .country-details {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .detail-item {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .detail-label {
+            color: #999;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 5px;
+        }
+
+        .detail-value {
+            color: #333;
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        .filter-section {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .filter-input {
+            padding: 10px 15px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+
+        .filter-input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        @media (max-width: 768px) {
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .chart-container {
+                height: 300px;
+            }
+
+            .country-details {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="header-content">
+            <h1>📊 Investor Dashboard</h1>
+            <div class="user-info">
+                <span class="user-badge">Investor Account</span>
+                <button class="btn-logout" onclick="logout()">Logout</button>
+            </div>
+        </div>
+    </header>
+
+    <main class="main-content">
+        <div class="dashboard-grid">
+            <div class="stat-card">
+                <h3>Total Countries</h3>
+                <div class="value" id="totalCountries">
+                    <div class="spinner"></div>
+                </div>
+                <div class="subtitle">Active mining regions</div>
+            </div>
+            <div class="stat-card">
+                <h3>Total Minerals</h3>
+                <div class="value" id="totalMinerals">
+                    <div class="spinner"></div>
+                </div>
+                <div class="subtitle">Critical resources tracked</div>
+            </div>
+            <div class="stat-card">
+                <h3>Active Sites</h3>
+                <div class="value" id="totalSites">
+                    <div class="spinner"></div>
+                </div>
+                <div class="subtitle">Mining operations</div>
+            </div>
+        </div>
+        
+            <div class="stat-card">
+                
+                <div class="value" id="totalProduction">
+                    
+                </div>
+               
+            </div>
+        </div>
+
+        
+
+        <div class="section">
+            <h2>
+                <div class="section-icon">🌍</div>
+                Country Profiles
+            </h2>
+            <div class="filter-section">
+                <input type="text" id="countryFilter" class="filter-input" placeholder="Search countries...">
+            </div>
+            <div id="countryProfiles">
+                <div class="loading">
+                    <div class="spinner"></div>
+                   
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>
+                <div class="section-icon">📈</div>
+                Production Statistics
+            </h2>
+            <div class="tabs">
+                <button class="tab active" onclick="switchTab('production-table')">Data View</button>
+                <button class="tab" onclick="switchTab('production-chart')">Trend Analysis</button>
+                <button class="tab" onclick="switchTab('production-by-country')">By Country</button>
+            </div>
+            <div id="production-table" class="tab-content active">
+                <div class="loading">
+                    <div class="spinner"></div>
+                    
+                </div>
+                <div class="table-container" id="productionTable"></div>
+            </div>
+            <div id="production-chart" class="tab-content">
+                <div class="chart-container">
+                    <canvas id="productionTrendChart"></canvas>
+                </div>
+            </div>
+            <div id="production-by-country" class="tab-content">
+                <div class="chart-container">
+                    <canvas id="productionCountryChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>
+                <div class="section-icon">💎</div>
+                Mineral Resources
+            </h2>
+            <div class="tabs">
+                <button class="tab active" onclick="switchTab('minerals-table')">All Minerals</button>
+                <button class="tab" onclick="switchTab('minerals-price')">Price Analysis</button>
+            </div>
+            <div id="minerals-table" class="tab-content active">
+                <div class="loading">
+                    <div class="spinner"></div>
+                    
+                </div>
+                <div class="table-container" id="mineralsTable"></div>
+            </div>
+            <div id="minerals-price" class="tab-content">
+                <div class="chart-container">
+                    <canvas id="mineralsPriceChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>
+                <div class="section-icon">🏭</div>
+                Mining Sites Overview
+            </h2>
+            <div class="tabs">
+                <button class="tab active" onclick="switchTab('sites-table')">Site Directory</button>
+                <button class="tab" onclick="switchTab('sites-production')">Production Capacity</button>
+            </div>
+            <div id="sites-table" class="tab-content active">
+                <div class="loading">
+                    <div class="spinner"></div>
+                    
+                </div>
+                <div class="table-container" id="sitesTable"></div>
+            </div>
+            <div id="sites-production" class="tab-content">
+                <div class="chart-container">
+                    <canvas id="sitesProductionChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>
+                <div class="section-icon">🌐</div>
+                Export Analysis
+            </h2>
+            <div class="tabs">
+                <button class="tab active" onclick="switchTab('exports-overview')">Overview</button>
+                <button class="tab" onclick="switchTab('exports-chart')">Export Trends</button>
+            </div>
+            <div id="exports-overview" class="tab-content active">
+                <div class="loading">
+                    <div class="spinner"></div>
+                   
+                </div>
+                <div id="exportsOverview"></div>
+            </div>
+            <div id="exports-chart" class="tab-content">
+                <div class="chart-container">
+                    <canvas id="exportsChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        let charts = {};
+        let allData = {};
+
+         async function loadCSV(filename) {
+            try {
+                const response = await fetch(filename);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const csvText = await response.text();
+                
+                return new Promise((resolve, reject) => {
+                    Papa.parse(csvText, {
+                        header: true,
+                        skipEmptyLines: true,
+                        dynamicTyping: false,
+                        complete: function(results) {
+                            const cleanData = results.data.filter(row => {
+                                return Object.values(row).some(value => value && value.trim() !== '');
+                            });
+                            console.log(`Loaded ${filename}:`, cleanData.length, 'rows');
+                            resolve(cleanData);
+                        },
+                        error: function(error) {
+                            reject(error);
+                        }
+                    });
+                });
+            } catch (error) {
+                console.error(`Error loading ${filename}:`, error);
+                throw error;
+            }
+        }
+
+        async function loadCountries() {
+            try {
+                const countries = await loadCSV('../countries.csv');
+                allData.countries = countries;
+                renderCountryProfiles(countries);
+                updateStatsCount('totalCountries', countries.length);
+            } catch (error) {
+                showError('countryProfiles', 'Failed to load country data: ' + error.message);
+            }
+        }
+
+        async function loadMinerals() {
+            try {
+                const minerals = await loadCSV('../minerals.csv');
+                allData.minerals = minerals;
+                renderMineralsTable(minerals);
+                renderMineralsPriceChart(minerals);
+                updateStatsCount('totalMinerals', minerals.length);
+            } catch (error) {
+                showError('mineralsTable', 'Failed to load minerals data: ' + error.message);
+            }
+        }
+
+        async function loadProduction() {
+    try {
+        const production = await loadCSV('../production_stats.csv');
+        allData.production = production;
+        renderProductionTable(production);
+        renderProductionCharts(production);
+        
+        // Use reduce to iterate (result not used)
+        production.reduce((sum, p) => {
+            const qty = parseFloat(p.QuantityProduced || p.Quantity || 0);
+            return sum + qty;
+        }, 0);
+        
+        // Display your custom message
+        updateStatsCount('totalProduction', 'Do you like what you are seeing investor?');
+    } catch (error) {
+        showError('productionTable', 'Failed to load production data: ' + error.message);
+    }
+}
+
+        async function loadSites() {
+            try {
+                const sites = await loadCSV('../sites.csv');
+                allData.sites = sites;
+                renderSitesTable(sites);
+                renderSitesProductionChart(sites);
+                updateStatsCount('totalSites', sites.length);
+            } catch (error) {
+                showError('sitesTable', 'Failed to load sites data: ' + error.message);
+            }
+        }
+
+        async function loadExports() {
+            try {
+                if (allData.production && allData.countries) {
+                    renderExportsOverview(allData.production, allData.countries);
+                    renderExportsChart(allData.production);
+                }
+            } catch (error) {
+                showError('exportsOverview', 'Failed to analyze export data: ' + error.message);
+            }
+        }
+
+        function updateStatsCount(elementId, count) {
+            const element = document.getElementById(elementId);
+            element.innerHTML = count;
+        }
+
+        function showError(containerId, message) {
+            const container = document.getElementById(containerId);
+            if (container) {
+                container.innerHTML = `<div class="error">${message}</div>`;
+            }
+        }
+
+       function renderCountryProfiles(countries) {
+            const section = document.querySelector('#countryProfiles').closest('.section');
+            const loadingDiv = section.querySelector('.loading');
+            if (loadingDiv) {
+                loadingDiv.remove();
+            }
+            
+            const container = document.getElementById('countryProfiles');
+            
+            if (!countries || countries.length === 0) {
+                container.innerHTML = '<p class="error">No country data available</p>';
+                return;
+            }
+
+            // Log first country to see actual field names
+            if (countries.length > 0) {
+                console.log('Country data fields:', Object.keys(countries[0]));
+                console.log('Sample country:', countries[0]);
+            }
+
+            let html = '';
+            countries.forEach(country => {
+                // Try different possible field name variations
+                const countryName = country.CountryName || country.Country || 'Unknown';
+                
+                // Try to find GDP field with various possible names
+                const gdpValue = country.GDP_Billion || country['GDP_Billion'] || 
+                                country.GDP_BillionUSD || country.GDP || country.gdp_billion;
+                const gdp = gdpValue && gdpValue.toString().toLowerCase() !== 'n/a' 
+                    ? parseFloat(gdpValue).toLocaleString() 
+                    : 'N/A';
+                
+                // Try to find Mining Revenue field
+                const miningRevenueValue = country.MiningRevenue_BillionUSD || country['MiningRevenue_BillionUSD'] ||
+                                          country.MiningRevenue || country.mining_revenue_billionusd;
+                const miningRevenue = miningRevenueValue && miningRevenueValue.toString().toLowerCase() !== 'n/a'
+                    ? parseFloat(miningRevenueValue).toLocaleString()
+                    : 'N/A';
+                
+                const keyProjects = country.KeyProjects || country.Key_Projects || country.key_projects || 'N/A';
+                
+                html += `
+                    <div class="country-card">
+                        <h3>${countryName}</h3>
+                        <div class="country-details">
+                            <div class="detail-item">
+                                <span class="detail-label">GDP (Billions USD)</span>
+                                <span class="detail-value">${gdp}</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">Mining Revenue (Billions USD)</span>
+                                <span class="detail-value">${miningRevenue}</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">Key Projects</span>
+                                <span class="detail-value">${keyProjects}</span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            container.innerHTML = html;
+        }
+
+        function renderMineralsTable(minerals) {
+            const container = document.getElementById('mineralsTable');
+            
+            if (!minerals || minerals.length === 0) {
+                container.innerHTML = '<p class="error">No minerals data available</p>';
+                return;
+            }
+
+            let html = '<table><thead><tr>';
+            const headers = Object.keys(minerals[0]);
+            headers.forEach(header => {
+                html += `<th>${header}</th>`;
+            });
+            html += '</tr></thead><tbody>';
+            
+            minerals.forEach(mineral => {
+                html += '<tr>';
+                headers.forEach(header => {
+                    html += `<td>${mineral[header] || '-'}</td>`;
+                });
+                html += '</tr>';
+            });
+            
+            html += '</tbody></table>';
+            container.innerHTML = html;
+        }
+
+        function renderProductionTable(production) {
+            const container = document.getElementById('productionTable');
+            
+            if (!production || production.length === 0) {
+                container.innerHTML = '<p class="error">No production data available</p>';
+                return;
+            }
+
+            let html = '<table><thead><tr>';
+            const headers = Object.keys(production[0]);
+            headers.forEach(header => {
+                html += `<th>${header}</th>`;
+            });
+            html += '</tr></thead><tbody>';
+            
+            production.forEach(prod => {
+                html += '<tr>';
+                headers.forEach(header => {
+                    html += `<td>${prod[header] || '-'}</td>`;
+                });
+                html += '</tr>';
+            });
+            
+            html += '</tbody></table>';
+            container.innerHTML = html;
+        }
+
+        function renderSitesTable(sites) {
+            const container = document.getElementById('sitesTable');
+            
+            if (!sites || sites.length === 0) {
+                container.innerHTML = '<p class="error">No sites data available</p>';
+                return;
+            }
+
+            let html = '<table><thead><tr>';
+            const headers = Object.keys(sites[0]);
+            headers.forEach(header => {
+                html += `<th>${header}</th>`;
+            });
+            html += '</tr></thead><tbody>';
+            
+            sites.forEach(site => {
+                html += '<tr>';
+                headers.forEach(header => {
+                    html += `<td>${site[header] || '-'}</td>`;
+                });
+                html += '</tr>';
+            });
+            
+            html += '</tbody></table>';
+            container.innerHTML = html;
+        }
+
+        function renderMineralsPriceChart(minerals) {
+            const ctx = document.getElementById('mineralsPriceChart');
+            if (!ctx || !minerals) return;
+            
+            if (charts.mineralsPrice) {
+                charts.mineralsPrice.destroy();
+            }
+
+            const priceField = Object.keys(minerals[0]).find(key => 
+                key.toLowerCase().includes('price')
+            );
+            const nameField = Object.keys(minerals[0]).find(key => 
+                key.toLowerCase().includes('name') || key.toLowerCase().includes('mineral')
+            );
+
+            if (!priceField || !nameField) return;
+
+            const prices = minerals.map(m => parseFloat(m[priceField]) || 0);
+            const names = minerals.map(m => m[nameField] || 'Unknown');
+            
+            charts.mineralsPrice = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: names,
+                    datasets: [{
+                        label: 'Price (USD)',
+                        data: prices,
+                        backgroundColor: 'rgba(102, 126, 234, 0.8)',
+                        borderColor: '#667eea',
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        title: {
+                            display: true,
+                            text: 'Mineral Price Comparison (USD)',
+                            font: { size: 16, weight: 'bold' }
+                        }
+                    },
+                    scales: {
+                        y: { beginAtZero: true }
+                    }
+                }
+            });
+        }
+
+        function renderProductionCharts(production) {
+            const yearField = Object.keys(production[0]).find(key => 
+                key.toLowerCase().includes('year')
+            );
+            const quantityField = Object.keys(production[0]).find(key => 
+                key.toLowerCase().includes('quantity') || key.toLowerCase().includes('production')
+            );
+
+            if (yearField && quantityField) {
+                const prodByYear = {};
+                production.forEach(p => {
+                    const year = p[yearField] || '';
+                    const qty = parseFloat(p[quantityField]) || 0;
+                    prodByYear[year] = (prodByYear[year] || 0) + qty;
+                });
+                
+                const years = Object.keys(prodByYear).sort();
+                const quantities = years.map(y => prodByYear[y]);
+                
+                const ctx = document.getElementById('productionTrendChart');
+                if (ctx) {
+                    if (charts.productionTrend) {
+                        charts.productionTrend.destroy();
+                    }
+                    
+                    charts.productionTrend = new Chart(ctx, {
+                        type: 'line',
+                        data: {
+                            labels: years,
+                            datasets: [{
+                                label: 'Total Production',
+                                data: quantities,
+                                borderColor: '#667eea',
+                                backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                                tension: 0.4,
+                                fill: true,
+                                borderWidth: 3
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                title: {
+                                    display: true,
+                                    text: 'Production Trends Over Time',
+                                    font: { size: 16, weight: 'bold' }
+                                }
+                            },
+                            scales: {
+                                y: { beginAtZero: true }
+                            }
+                        }
+                    });
+                }
+            }
+
+            const countryField = Object.keys(production[0]).find(key => 
+                key.toLowerCase().includes('country')
+            );
+            
+            if (countryField && quantityField) {
+                const prodByCountry = {};
+                production.forEach(p => {
+                    const country = p[countryField] || 'Unknown';
+                    const qty = parseFloat(p[quantityField]) || 0;
+                    prodByCountry[country] = (prodByCountry[country] || 0) + qty;
+                });
+                
+                const countries = Object.keys(prodByCountry);
+                const quantities = countries.map(c => prodByCountry[c]);
+                
+                const ctx2 = document.getElementById('productionCountryChart');
+                if (ctx2) {
+                    if (charts.productionCountry) {
+                        charts.productionCountry.destroy();
+                    }
+                    
+                    charts.productionCountry = new Chart(ctx2, {
+                        type: 'doughnut',
+                        data: {
+                            labels: countries,
+                            datasets: [{
+                                data: quantities,
+                                backgroundColor: [
+                                    '#667eea', '#764ba2', '#f093fb', '#4facfe',
+                                    '#43e97b', '#fa709a', '#fee140', '#30cfd0'
+                                ]
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                title: {
+                                    display: true,
+                                    text: 'Production by Country',
+                                    font: { size: 16, weight: 'bold' }
+                                },
+                                legend: { position: 'right' }
+                            }
+                        }
+                    });
+                }
+            }
+        }
+
+        function renderSitesProductionChart(sites) {
+            const ctx = document.getElementById('sitesProductionChart');
+            if (!ctx || !sites) return;
+            
+            if (charts.sitesProduction) {
+                charts.sitesProduction.destroy();
+            }
+
+            const nameField = Object.keys(sites[0]).find(key => 
+                key.toLowerCase().includes('name') || key.toLowerCase().includes('site')
+            );
+            const productionField = Object.keys(sites[0]).find(key => 
+                key.toLowerCase().includes('production') || key.toLowerCase().includes('annual')
+            );
+
+            if (!nameField || !productionField) return;
+            
+            const names = sites.map(s => s[nameField] || 'Unknown');
+            const productions = sites.map(s => parseFloat(s[productionField]) || 0);
+            
+            charts.sitesProduction = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: names,
+                    datasets: [{
+                        label: 'Annual Production Capacity',
+                        data: productions,
+                        backgroundColor: 'rgba(118, 75, 162, 0.8)',
+                        borderColor: '#764ba2',
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    indexAxis: 'y',
+                    plugins: {
+                        legend: { display: false },
+                        title: {
+                            display: true,
+                            text: 'Mining Sites Production Capacity',
+                            font: { size: 16, weight: 'bold' }
+                        }
+                    },
+                    scales: {
+                        x: { beginAtZero: true }
+                    }
+                }
+            });
+        }
+
+        function renderExportsOverview(production, countries) {
+            const container = document.getElementById('exportsOverview');
+            
+            const countryField = Object.keys(production[0]).find(key => 
+                key.toLowerCase().includes('country')
+            );
+            const quantityField = Object.keys(production[0]).find(key => 
+                key.toLowerCase().includes('quantity') || key.toLowerCase().includes('production')
+            );
+
+            if (!countryField || !quantityField) {
+                container.innerHTML = '<p class="error">Export data structure not compatible</p>';
+                return;
+            }
+
+            const exportsByCountry = {};
+            production.forEach(p => {
+                const country = p[countryField] || 'Unknown';
+                const qty = parseFloat(p[quantityField]) || 0;
+                exportsByCountry[country] = (exportsByCountry[country] || 0) + qty;
+            });
+
+            let html = '<div class="dashboard-grid">';
+            Object.keys(exportsByCountry).forEach(country => {
+                const qty = exportsByCountry[country].toLocaleString();
+                html += `
+                    <div class="stat-card">
+                        <h3>${country}</h3>
+                        <div class="value">${qty}</div>
+                        <div class="subtitle">Total Production/Exports</div>
+                    </div>
+                `;
+            });
+            html += '</div>';
+            
+            container.innerHTML = html;
+        }
+
+        function renderExportsChart(production) {
+            const ctx = document.getElementById('exportsChart');
+            if (!ctx || !production) return;
+            
+            if (charts.exports) {
+                charts.exports.destroy();
+            }
+
+            const countryField = Object.keys(production[0]).find(key => 
+                key.toLowerCase().includes('country')
+            );
+            const quantityField = Object.keys(production[0]).find(key => 
+                key.toLowerCase().includes('quantity') || key.toLowerCase().includes('production')
+            );
+            const yearField = Object.keys(production[0]).find(key => 
+                key.toLowerCase().includes('year')
+            );
+
+            if (!countryField || !quantityField || !yearField) return;
+
+            const dataByYear = {};
+            production.forEach(p => {
+                const year = p[yearField] || '';
+                const country = p[countryField] || 'Unknown';
+                const qty = parseFloat(p[quantityField]) || 0;
+                
+                if (!dataByYear[year]) {
+                    dataByYear[year] = {};
+                }
+                dataByYear[year][country] = (dataByYear[year][country] || 0) + qty;
+            });
+
+            const years = Object.keys(dataByYear).sort();
+            const countries = [...new Set(production.map(p => p[countryField]))];
+            
+            const datasets = countries.map((country, index) => {
+                const colors = ['#667eea', '#764ba2', '#f093fb', '#4facfe', '#43e97b', '#fa709a'];
+                return {
+                    label: country,
+                    data: years.map(year => dataByYear[year][country] || 0),
+                    borderColor: colors[index % colors.length],
+                    backgroundColor: colors[index % colors.length] + '30',
+                    tension: 0.4,
+                    fill: false
+                };
+            });
+            
+            charts.exports = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: years,
+                    datasets: datasets
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'Export Trends by Country',
+                            font: { size: 16, weight: 'bold' }
+                        },
+                        legend: { position: 'bottom' }
+                    },
+                    scales: {
+                        y: { beginAtZero: true }
+                    }
+                }
+            });
+        }
+
+        function switchTab(tabId) {
+            const section = document.getElementById(tabId).closest('.section');
+            
+            section.querySelectorAll('.tab').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            
+            section.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            document.getElementById(tabId).classList.add('active');
+
+            setTimeout(() => {
+                if (tabId === 'minerals-price' && allData.minerals) {
+                    renderMineralsPriceChart(allData.minerals);
+                } else if (tabId === 'production-chart' && allData.production) {
+                    renderProductionCharts(allData.production);
+                } else if (tabId === 'production-by-country' && allData.production) {
+                    renderProductionCharts(allData.production);
+                } else if (tabId === 'sites-production' && allData.sites) {
+                    renderSitesProductionChart(allData.sites);
+                } else if (tabId === 'exports-chart' && allData.production) {
+                    renderExportsChart(allData.production);
+                }
+            }, 100);
+        }
+
+        function logout() {
+            if (confirm('Are you sure you want to logout?')) {
+                window.location.href = './login.html';
+            }
+        }
+
+        document.getElementById('countryFilter').addEventListener('input', function(e) {
+            const filter = e.target.value.toLowerCase();
+            const countryCards = document.querySelectorAll('.country-card');
+            
+            countryCards.forEach(card => {
+                const text = card.textContent.toLowerCase();
+                card.style.display = text.includes(filter) ? 'block' : 'none';
+            });
+        });
+
+        async function initializeDashboard() {
+            await Promise.allSettled([
+                loadCountries(),
+                loadMinerals(),
+                loadProduction(),
+                loadSites()
+            ]);
+            
+            loadExports();
+        }
+
+        window.addEventListener('DOMContentLoaded', initializeDashboard);
+    </script>
+</body>
+</html>
