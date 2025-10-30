@@ -1,0 +1,1889 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - African Critical Minerals</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+    
+   <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Roboto', sans-serif;
+            background: #f5f7fa;
+            color: #333;
+        }
+
+        .header {
+            background: white;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+            padding: 20px 0;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header h1 {
+            color: #1a73e8;
+            font-size: 24px;
+            font-weight: 600;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn-logout {
+            background: #ef4444;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s;
+        }
+
+        .btn-logout:hover {
+            background: #dc2626;
+            transform: translateY(-2px);
+        }
+        
+        .btn-map {
+            background: #ef4444;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s;
+        }
+
+        .btn-map:hover {
+            background: #dc2626;
+            transform: translateY(-2px);
+        }
+
+        .main-content {
+            max-width: 1400px;
+            margin: 30px auto;
+            padding: 0 20px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+            border-left: 4px solid #1a73e8;
+        }
+
+        .stat-card h3 {
+            color: #666;
+            font-size: 14px;
+            font-weight: 500;
+            margin-bottom: 10px;
+        }
+
+        .stat-card .value {
+            color: #1a73e8;
+            font-size: 32px;
+            font-weight: 700;
+        }
+
+        .section {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 25px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+        }
+
+        .section h2 {
+            color: #1a73e8;
+            font-size: 20px;
+            margin-bottom: 20px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 400px;
+            margin-bottom: 20px;
+        }
+
+        .table-container {
+            overflow-x: auto;
+            margin-top: 15px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+        }
+
+        table th {
+            background: #f8f9fa;
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+            color: #333;
+            border-bottom: 2px solid #e9ecef;
+        }
+
+        table td {
+            padding: 12px;
+            border-bottom: 1px solid #e9ecef;
+            color: #666;
+        }
+
+        table tr:hover {
+            background: #f8f9fa;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #1a73e8;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .error {
+            background: #fee;
+            color: #c33;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #e9ecef;
+        }
+
+        .tab {
+            padding: 12px 24px;
+            background: none;
+            border: none;
+            color: #666;
+            cursor: pointer;
+            font-weight: 500;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s;
+        }
+
+        .tab.active {
+            color: #1a73e8;
+            border-bottom-color: #1a73e8;
+        }
+
+        .tab:hover {
+            color: #1a73e8;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 8px;
+        }
+
+        .btn {
+            padding: 6px 12px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 500;
+            transition: all 0.3s;
+        }
+
+        .btn-edit {
+            background: #10b981;
+            color: white;
+        }
+
+        .btn-edit:hover {
+            background: #059669;
+        }
+
+        .btn-delete {
+            background: #ef4444;
+            color: white;
+        }
+
+        .btn-delete:hover {
+            background: #dc2626;
+        }
+
+        .btn-save {
+            background: #1a73e8;
+            color: white;
+        }
+
+        .btn-save:hover {
+            background: #1557b0;
+        }
+
+        .btn-cancel {
+            background: #6b7280;
+            color: white;
+        }
+
+        .btn-cancel:hover {
+            background: #4b5563;
+        }
+
+        .btn-add {
+            background: #1a73e8;
+            color: white;
+            padding: 10px 20px;
+            margin-bottom: 15px;
+        }
+
+        .btn-add:hover {
+            background: #1557b0;
+        }
+
+        .editable-input {
+            width: 100%;
+            padding: 6px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            max-width: 500px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            margin-bottom: 20px;
+        }
+
+        .modal-header h3 {
+            color: #1a73e8;
+            font-size: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+            color: #333;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+
+        .modal-footer {
+            margin-top: 20px;
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+
+        .success-message {
+            background: #10b981;
+            color: white;
+            padding: 10px;
+            border-radius: 6px;
+            margin-bottom: 15px;
+            display: none;
+        }
+
+        .success-message.show {
+            display: block;
+        }
+
+        @media (max-width: 768px) {
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .chart-container {
+                height: 300px;
+            }
+
+            .action-buttons {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+<header class="header">
+    <div class="header-content">
+        <h1>Admin Dashboard - Data Analytics</h1>
+        <div class="button-group">
+            <button class="btn-logout" onclick="logout()">Logout</button>
+            <button class="btn-map" onclick="map()">Map</button>
+        </div>
+    </div>
+</header>
+
+    <!-- Success Message -->
+    <div id="successMessage" class="success-message"></div>
+
+    <!-- Add User Modal -->
+    <div id="addUserModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Add New User</h3>
+            </div>
+            <div class="form-group">
+                <label>Username</label>
+                <input type="text" id="newUsername" placeholder="Enter username">
+            </div>
+            <div class="form-group">
+                <label>Email</label>
+                <input type="email" id="newEmail" placeholder="Enter email">
+            </div>
+            <div class="form-group">
+                <label>Password</label>
+                <input type="password" id="newPassword" placeholder="Enter password">
+            </div>
+            <div class="form-group">
+                <label>Role</label>
+                <select id="newRoleID">
+                    <option value="1">Administrator</option>
+                    <option value="2">Investor</option>
+                    <option value="3">Researcher</option>
+                </select>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-cancel" onclick="closeAddUserModal()">Cancel</button>
+                <button class="btn btn-save" onclick="saveNewUser()">Add User</button>
+            </div>
+        </div>
+    </div>
+
+    <main class="main-content">
+        <div class="stats-grid" id="statsGrid">
+            <div class="stat-card">
+                <h3>Total Users</h3>
+                <div class="value" id="totalUsers">
+                    <div class="spinner"></div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <h3>Total Minerals</h3>
+                <div class="value" id="totalMinerals">
+                    <div class="spinner"></div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <h3>Total Countries</h3>
+                <div class="value" id="totalCountries">
+                    <div class="spinner"></div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <h3>Active Sites</h3>
+                <div class="value" id="totalSites">
+                    <div class="spinner"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>Users Management</h2>
+            <button class="btn btn-add" onclick="openAddUserModal()">+ Add New User</button>
+            <div class="tabs">
+                <button class="tab active" onclick="switchTab('users-data')">Data Table</button>
+                <button class="tab" onclick="switchTab('users-chart')">Chart</button>
+            </div>
+            <div id="users-data" class="tab-content active">
+                <div class="loading">
+                    <div class="spinner"></div>
+                    Loading users data...
+                </div>
+                <div class="table-container" id="usersTable"></div>
+            </div>
+            <div id="users-chart" class="tab-content">
+                <div class="chart-container">
+                    <canvas id="usersChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>Minerals Data</h2>
+            <div class="tabs">
+                <button class="tab active" onclick="switchTab('minerals-data')">Data Table</button>
+                <button class="tab" onclick="switchTab('minerals-chart')">Price Chart</button>
+            </div>
+            <div id="minerals-data" class="tab-content active">
+                <div class="loading">
+                    <div class="spinner"></div>
+                    Loading minerals data...
+                </div>
+                <div class="table-container" id="mineralsTable"></div>
+            </div>
+            <div id="minerals-chart" class="tab-content">
+                <div class="chart-container">
+                    <canvas id="mineralsChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>Countries Data</h2>
+            <div class="tabs">
+                <button class="tab active" onclick="switchTab('countries-data')">Data Table</button>
+                <button class="tab" onclick="switchTab('countries-chart')">GDP Chart</button>
+            </div>
+            <div id="countries-data" class="tab-content active">
+                <div class="loading">
+                    <div class="spinner"></div>
+                    Loading countries data...
+                </div>
+                <div class="table-container" id="countriesTable"></div>
+            </div>
+            <div id="countries-chart" class="tab-content">
+                <div class="chart-container">
+                    <canvas id="countriesChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>Production Statistics</h2>
+            <div class="tabs">
+                <button class="tab active" onclick="switchTab('production-data')">Data Table</button>
+                <button class="tab" onclick="switchTab('production-chart')">Production Trends</button>
+            </div>
+            <div id="production-data" class="tab-content active">
+                <div class="loading">
+                    <div class="spinner"></div>
+                    Loading production data...
+                </div>
+                <div class="table-container" id="productionTable"></div>
+            </div>
+            <div id="production-chart" class="tab-content">
+                <div class="chart-container">
+                    <canvas id="productionChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>Mining Sites</h2>
+            <div class="tabs">
+                <button class="tab active" onclick="switchTab('sites-data')">Data Table</button>
+                <button class="tab" onclick="switchTab('sites-chart')">Production by Site</button>
+            </div>
+            <div id="sites-data" class="tab-content active">
+                <div class="loading">
+                    <div class="spinner"></div>
+                    Loading sites data...
+                </div>
+                <div class="table-container" id="sitesTable"></div>
+            </div>
+            <div id="sites-chart" class="tab-content">
+                <div class="chart-container">
+                    <canvas id="sitesChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>Roles & Permissions</h2>
+            <div class="loading">
+                <div class="spinner"></div>
+                Loading roles data...
+            </div>
+            <div class="table-container" id="rolesTable"></div>
+        </div>
+    </main>
+
+    <script>
+        let charts = {};
+        let editingRows = {};
+
+        // CSV file configuration
+        const csvFiles = [
+            { name: 'users', file: '../users.csv' },
+            { name: 'minerals', file: '../minerals.csv' },
+            { name: 'countries', file: '../countries.csv' },
+            { name: 'production', file: '../production_stats.csv' },
+            { name: 'sites', file: '../sites.csv' },
+            { name: 'roles', file: '../roles.csv' }
+        ];
+
+        // Load and parse CSV file directly
+        async function loadCSV(filename) {
+            try {
+                const response = await fetch(filename);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const csvText = await response.text();
+                
+                return new Promise((resolve, reject) => {
+                    Papa.parse(csvText, {
+                        header: true,
+                        skipEmptyLines: true,
+                        complete: function(results) {
+                            if (results.errors && results.errors.length > 0) {
+                                console.warn(`Parsing warnings for ${filename}:`, results.errors);
+                            }
+                            const cleanData = results.data.filter(row => {
+                                return Object.values(row).some(value => value && value.trim() !== '');
+                            });
+                            console.log(`${filename} loaded:`, cleanData.length, 'rows');
+                            resolve(cleanData);
+                        },
+                        error: function(error) {
+                            console.error(`Error parsing ${filename}:`, error);
+                            reject(error);
+                        }
+                    });
+                });
+            } catch (error) {
+                console.error(`Error loading ${filename}:`, error);
+                throw error;
+            }
+        }
+
+        // Load users data and render table
+        async function loadAndRenderUsers() {
+            try {
+                const users = await loadCSV('../users.csv');
+                renderUsersTable(users);
+                renderUsersChart(users);
+                updateStatsCount('totalUsers', users.length);
+            } catch (error) {
+                showError('usersTable', 'Failed to load users data: ' + error.message);
+            }
+        }
+
+        // Load minerals data and render table
+        async function loadAndRenderMinerals() {
+            try {
+                const minerals = await loadCSV('../minerals.csv');
+                renderMineralsTable(minerals);
+                renderMineralsChart(minerals);
+                updateStatsCount('totalMinerals', minerals.length);
+            } catch (error) {
+                showError('mineralsTable', 'Failed to load minerals data: ' + error.message);
+            }
+        }
+
+        // Load countries data and render table
+        async function loadAndRenderCountries() {
+            try {
+                const countries = await loadCSV('../countries.csv');
+                renderCountriesTable(countries);
+                renderCountriesChart(countries);
+                updateStatsCount('totalCountries', countries.length);
+            } catch (error) {
+                showError('countriesTable', 'Failed to load countries data: ' + error.message);
+            }
+        }
+
+        // Load production data and render table
+        async function loadAndRenderProduction() {
+            try {
+                const production = await loadCSV('../production_stats.csv');
+                renderProductionTable(production);
+                renderProductionChart(production);
+            } catch (error) {
+                showError('productionTable', 'Failed to load production data: ' + error.message);
+            }
+        }
+
+        // Load sites data and render table
+        async function loadAndRenderSites() {
+            try {
+                const sites = await loadCSV('../sites.csv');
+                renderSitesTable(sites);
+                renderSitesChart(sites);
+                updateStatsCount('totalSites', sites.length);
+            } catch (error) {
+                showError('sitesTable', 'Failed to load sites data: ' + error.message);
+            }
+        }
+
+        // Load roles data and render table
+        async function loadAndRenderRoles() {
+            try {
+                const roles = await loadCSV('../roles.csv');
+                renderRolesTable(roles);
+            } catch (error) {
+                showError('rolesTable', 'Failed to load roles data: ' + error.message);
+            }
+        }
+
+        // Update statistics count
+        function updateStatsCount(elementId, count) {
+            const element = document.getElementById(elementId);
+            element.innerHTML = count;
+        }
+
+        // Show error message
+        function showError(containerId, message) {
+            const container = document.getElementById(containerId).parentElement;
+            const loadingElement = container.querySelector('.loading');
+            if (loadingElement) {
+                loadingElement.style.display = 'none';
+            }
+            container.innerHTML += `<div class="error">${message}</div>`;
+        }
+
+        // Render users table
+        function renderUsersTable(users) {
+            const container = document.getElementById('usersTable').parentElement;
+            const loadingElement = container.querySelector('.loading');
+            if (loadingElement) {
+                loadingElement.style.display = 'none';
+            }
+
+            const tableContainer = document.getElementById('usersTable');
+            
+            if (!users || users.length === 0) {
+                tableContainer.innerHTML = '<p class="error">No users data available</p>';
+                return;
+            }
+
+            let html = '<table><thead><tr>';
+            const headers = Object.keys(users[0]);
+            headers.forEach(header => {
+                html += `<th>${header}</th>`;
+            });
+            html += '<th>Actions</th>';
+            html += '</tr></thead><tbody>';
+            
+            users.forEach((user, index) => {
+                html += '<tr>';
+                headers.forEach(header => {
+                    html += `<td>${user[header] || '-'}</td>`;
+                });
+                html += `<td>
+                    <div class="action-buttons">
+                        <button class="btn btn-edit" onclick="editUser(${index})">Edit</button>
+                        <button class="btn btn-delete" onclick="deleteUser(${index})">Delete</button>
+                    </div>
+                </td>`;
+                html += '</tr>';
+            });
+            
+            html += '</tbody></table>';
+            tableContainer.innerHTML = html;
+        }
+
+        // Render minerals table
+        function renderMineralsTable(minerals) {
+            const container = document.getElementById('mineralsTable').parentElement;
+            const loadingElement = container.querySelector('.loading');
+            if (loadingElement) {
+                loadingElement.style.display = 'none';
+            }
+
+            const tableContainer = document.getElementById('mineralsTable');
+            
+            if (!minerals || minerals.length === 0) {
+                tableContainer.innerHTML = '<p class="error">No minerals data available</p>';
+                return;
+            }
+
+            let html = '<table><thead><tr>';
+            const headers = Object.keys(minerals[0]);
+            headers.forEach(header => {
+                html += `<th>${header}</th>`;
+            });
+            html += '<th>Actions</th>';
+            html += '</tr></thead><tbody>';
+            
+            minerals.forEach((mineral, index) => {
+                html += '<tr>';
+                headers.forEach(header => {
+                    html += `<td>${mineral[header] || '-'}</td>`;
+                });
+                html += `<td>
+                    <div class="action-buttons">
+                        <button class="btn btn-edit" onclick="editMineral(${index})">Edit</button>
+                        <button class="btn btn-delete" onclick="deleteMineral(${index})">Delete</button>
+                    </div>
+                </td>`;
+                html += '</tr>';
+            });
+            
+            html += '</tbody></table>';
+            tableContainer.innerHTML = html;
+        }
+
+        // Render countries table
+        function renderCountriesTable(countries) {
+            const container = document.getElementById('countriesTable').parentElement;
+            const loadingElement = container.querySelector('.loading');
+            if (loadingElement) {
+                loadingElement.style.display = 'none';
+            }
+
+            const tableContainer = document.getElementById('countriesTable');
+            
+            if (!countries || countries.length === 0) {
+                tableContainer.innerHTML = '<p class="error">No countries data available</p>';
+                return;
+            }
+
+            let html = '<table><thead><tr>';
+            const headers = Object.keys(countries[0]);
+            headers.forEach(header => {
+                html += `<th>${header}</th>`;
+            });
+            html += '<th>Actions</th>';
+            html += '</tr></thead><tbody>';
+            
+            countries.forEach((country, index) => {
+                html += '<tr>';
+                headers.forEach(header => {
+                    html += `<td>${country[header] || '-'}</td>`;
+                });
+                html += `<td>
+                    <div class="action-buttons">
+                        <button class="btn btn-edit" onclick="editCountry(${index})">Edit</button>
+                        <button class="btn btn-delete" onclick="deleteCountry(${index})">Delete</button>
+                    </div>
+                </td>`;
+                html += '</tr>';
+            });
+            
+            html += '</tbody></table>';
+            tableContainer.innerHTML = html;
+        }
+
+        // Render production table
+        function renderProductionTable(production) {
+            const container = document.getElementById('productionTable').parentElement;
+            const loadingElement = container.querySelector('.loading');
+            if (loadingElement) {
+                loadingElement.style.display = 'none';
+            }
+
+            const tableContainer = document.getElementById('productionTable');
+            
+            if (!production || production.length === 0) {
+                tableContainer.innerHTML = '<p class="error">No production data available</p>';
+                return;
+            }
+
+            let html = '<table><thead><tr>';
+            const headers = Object.keys(production[0]);
+            headers.forEach(header => {
+                html += `<th>${header}</th>`;
+            });
+            html += '<th>Actions</th>';
+            html += '</tr></thead><tbody>';
+            
+            production.forEach((prod, index) => {
+                html += '<tr>';
+                headers.forEach(header => {
+                    html += `<td>${prod[header] || '-'}</td>`;
+                });
+                html += `<td>
+                    <div class="action-buttons">
+                        <button class="btn btn-edit" onclick="editProduction(${index})">Edit</button>
+                        <button class="btn btn-delete" onclick="deleteProduction(${index})">Delete</button>
+                    </div>
+                </td>`;
+                html += '</tr>';
+            });
+            
+            html += '</tbody></table>';
+            tableContainer.innerHTML = html;
+        }
+
+        // Render sites table
+        function renderSitesTable(sites) {
+            const container = document.getElementById('sitesTable').parentElement;
+            const loadingElement = container.querySelector('.loading');
+            if (loadingElement) {
+                loadingElement.style.display = 'none';
+            }
+
+            const tableContainer = document.getElementById('sitesTable');
+            
+            if (!sites || sites.length === 0) {
+                tableContainer.innerHTML = '<p class="error">No sites data available</p>';
+                return;
+            }
+
+            let html = '<table><thead><tr>';
+            const headers = Object.keys(sites[0]);
+            headers.forEach(header => {
+                html += `<th>${header}</th>`;
+            });
+            html += '<th>Actions</th>';
+            html += '</tr></thead><tbody>';
+            
+            sites.forEach((site, index) => {
+                html += '<tr>';
+                headers.forEach(header => {
+                    html += `<td>${site[header] || '-'}</td>`;
+                });
+                html += `<td>
+                    <div class="action-buttons">
+                        <button class="btn btn-edit" onclick="editSite(${index})">Edit</button>
+                        <button class="btn btn-delete" onclick="deleteSite(${index})">Delete</button>
+                    </div>
+                </td>`;
+                html += '</tr>';
+            });
+            
+            html += '</tbody></table>';
+            tableContainer.innerHTML = html;
+        }
+
+        // Render roles table
+        function renderRolesTable(roles) {
+            const container = document.getElementById('rolesTable').parentElement;
+            const loadingElement = container.querySelector('.loading');
+            if (loadingElement) {
+                loadingElement.style.display = 'none';
+            }
+
+            const tableContainer = document.getElementById('rolesTable');
+            
+            if (!roles || roles.length === 0) {
+                tableContainer.innerHTML = '<p class="error">No roles data available</p>';
+                return;
+            }
+
+            let html = '<table><thead><tr>';
+            const headers = Object.keys(roles[0]);
+            headers.forEach(header => {
+                html += `<th>${header}</th>`;
+            });
+            html += '</tr></thead><tbody>';
+            
+            roles.forEach(role => {
+                html += '<tr>';
+                headers.forEach(header => {
+                    html += `<td>${role[header] || '-'}</td>`;
+                });
+                html += '</tr>';
+            });
+            
+            html += '</tbody></table>';
+            tableContainer.innerHTML = html;
+        }
+
+        // Chart rendering functions
+        async function renderUsersChart(users) {
+            if (!users) {
+                try {
+                    users = await loadCSV('../users.csv');
+                } catch (error) {
+                    console.error('Failed to load users for chart:', error);
+                    return;
+                }
+            }
+
+            const ctx = document.getElementById('usersChart');
+            if (!ctx) return;
+            
+            if (charts.users) {
+                charts.users.destroy();
+            }
+            
+            const roleCounts = {};
+            users.forEach(user => {
+                const roleId = user.RoleID || user.Role || 'Unknown';
+                const roleName = getRoleName(roleId);
+                roleCounts[roleName] = (roleCounts[roleName] || 0) + 1;
+            });
+            
+            charts.users = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: Object.keys(roleCounts),
+                    datasets: [{
+                        data: Object.values(roleCounts),
+                        backgroundColor: [
+                            '#1a73e8',
+                            '#10b981',
+                            '#f59e0b'
+                        ]
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        },
+                        title: {
+                            display: true,
+                            text: 'User Distribution by Role'
+                        }
+                    }
+                }
+            });
+        }
+
+        async function renderMineralsChart(minerals) {
+            if (!minerals) {
+                try {
+                    minerals = await loadCSV('../minerals.csv');
+                } catch (error) {
+                    console.error('Failed to load minerals for chart:', error);
+                    return;
+                }
+            }
+
+            const ctx = document.getElementById('mineralsChart');
+            if (!ctx) return;
+            
+            if (charts.minerals) {
+                charts.minerals.destroy();
+            }
+
+            // Find price column (could be 'Price', 'GlobalPrice', etc.)
+            const priceField = Object.keys(minerals[0]).find(key => 
+                key.toLowerCase().includes('price')
+            );
+            const nameField = Object.keys(minerals[0]).find(key => 
+                key.toLowerCase().includes('name') || key.toLowerCase().includes('mineral')
+            );
+
+            if (!priceField || !nameField) {
+                console.warn('Price or name field not found in minerals data');
+                return;
+            }
+
+            const prices = minerals.map(m => parseFloat(m[priceField]) || 0);
+            const mineralNames = minerals.map(m => m[nameField] || 'Unknown');
+            
+            charts.minerals = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: mineralNames,
+                    datasets: [{
+                        label: 'Price (USD)',
+                        data: prices,
+                        backgroundColor: '#1a73e8'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        title: {
+                            display: true,
+                            text: 'Mineral Price Comparison'
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+
+        async function renderCountriesChart(countries) {
+            if (!countries) {
+                try {
+                    countries = await loadCSV('../countries.csv');
+                } catch (error) {
+                    console.error('Failed to load countries for chart:', error);
+                    return;
+                }
+            }
+
+            const ctx = document.getElementById('countriesChart');
+            if (!ctx) return;
+            
+            if (charts.countries) {
+                charts.countries.destroy();
+            }
+
+            // Find GDP column
+            const gdpField = Object.keys(countries[0]).find(key => 
+                key.toLowerCase().includes('gdp')
+            );
+            const nameField = Object.keys(countries[0]).find(key => 
+                key.toLowerCase().includes('name') || key.toLowerCase().includes('country')
+            );
+
+            if (!gdpField || !nameField) {
+                console.warn('GDP or name field not found in countries data');
+                return;
+            }
+            
+            const countryNames = countries.map(c => c[nameField] || 'Unknown');
+            const gdps = countries.map(c => parseFloat(c[gdpField]) || 0);
+            
+            charts.countries = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: countryNames,
+                    datasets: [{
+                        label: 'GDP (Billions USD)',
+                        data: gdps,
+                        backgroundColor: '#10b981'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    indexAxis: 'y',
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        title: {
+                            display: true,
+                            text: 'Country GDP Comparison'
+                        }
+                    },
+                    scales: {
+                        x: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+
+        async function renderProductionChart(production) {
+            if (!production) {
+                try {
+                    production = await loadCSV('../production_stats.csv');
+                } catch (error) {
+                    console.error('Failed to load production for chart:', error);
+                    return;
+                }
+            }
+
+            const ctx = document.getElementById('productionChart');
+            if (!ctx) return;
+            
+            if (charts.production) {
+                charts.production.destroy();
+            }
+
+            // Find year and quantity fields
+            const yearField = Object.keys(production[0]).find(key => 
+                key.toLowerCase().includes('year')
+            );
+            const quantityField = Object.keys(production[0]).find(key => 
+                key.toLowerCase().includes('quantity') || key.toLowerCase().includes('production')
+            );
+
+            if (!yearField || !quantityField) {
+                console.warn('Year or quantity field not found in production data');
+                return;
+            }
+            
+            const productionByYear = {};
+            production.forEach(p => {
+                const year = p[yearField] || '';
+                const quantity = parseFloat(p[quantityField]) || 0;
+                if (!productionByYear[year]) {
+                    productionByYear[year] = 0;
+                }
+                productionByYear[year] += quantity;
+            });
+            
+            const years = Object.keys(productionByYear).sort();
+            const quantities = years.map(year => productionByYear[year]);
+            
+            charts.production = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: years,
+                    datasets: [{
+                        label: 'Total Production',
+                        data: quantities,
+                        borderColor: '#1a73e8',
+                        backgroundColor: 'rgba(26, 115, 232, 0.1)',
+                        tension: 0.4,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'Production Trends Over Time'
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+
+        async function renderSitesChart(sites) {
+            if (!sites) {
+                try {
+                    sites = await loadCSV('../sites.csv');
+                } catch (error) {
+                    console.error('Failed to load sites for chart:', error);
+                    return;
+                }
+            }
+
+            const ctx = document.getElementById('sitesChart');
+            if (!ctx) return;
+            
+            if (charts.sites) {
+                charts.sites.destroy();
+            }
+
+            // Find site name and production fields
+            const nameField = Object.keys(sites[0]).find(key => 
+                key.toLowerCase().includes('name') || key.toLowerCase().includes('site')
+            );
+            const productionField = Object.keys(sites[0]).find(key => 
+                key.toLowerCase().includes('production') || key.toLowerCase().includes('annual')
+            );
+
+            if (!nameField || !productionField) {
+                console.warn('Name or production field not found in sites data');
+                return;
+            }
+            
+            const siteNames = sites.map(s => s[nameField] || 'Unknown');
+            const productions = sites.map(s => parseFloat(s[productionField]) || 0);
+            
+            charts.sites = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: siteNames,
+                    datasets: [{
+                        label: 'Annual Production',
+                        data: productions,
+                        backgroundColor: '#f59e0b'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        title: {
+                            display: true,
+                            text: 'Production by Mining Site'
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+
+        // Helper function to get role name
+        function getRoleName(roleId) {
+            const roleNames = {
+                '1': 'Administrator',
+                '2': 'Investor',
+                '3': 'Researcher'
+            };
+            return roleNames[roleId] || `Role ${roleId}`;
+        }
+
+        // Tab switching functionality
+        function switchTab(tabId) {
+            const section = document.getElementById(tabId).closest('.section');
+            
+            // Update tab buttons
+            section.querySelectorAll('.tab').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            
+            // Update tab content
+            section.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            document.getElementById(tabId).classList.add('active');
+
+            // Render chart if switching to chart tab
+            if (tabId.includes('chart')) {
+                const chartType = tabId.split('-')[0];
+                setTimeout(() => {
+                    switch(chartType) {
+                        case 'users':
+                            renderUsersChart();
+                            break;
+                        case 'minerals':
+                            renderMineralsChart();
+                            break;
+                        case 'countries':
+                            renderCountriesChart();
+                            break;
+                        case 'production':
+                            renderProductionChart();
+                            break;
+                        case 'sites':
+                            renderSitesChart();
+                            break;
+                    }
+                }, 100);
+            }
+        }
+
+        // CSV write function
+        function downloadCSV(filename, data) {
+            if (!data || data.length === 0) return;
+            
+            const csv = Papa.unparse(data);
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+            link.setAttribute('href', url);
+            link.setAttribute('download', filename);
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        // Delete functions with CSV update
+        async function deleteUser(index) {
+            if (confirm('Are you sure you want to delete this user?')) {
+                try {
+                    const users = await loadCSV('../users.csv');
+                    users.splice(index, 1);
+                    downloadCSV('users.csv', users);
+                    showSuccess('User deleted! Please replace the users.csv file with the downloaded file.');
+                    setTimeout(() => {
+                        loadAndRenderUsers();
+                    }, 1000);
+                } catch (error) {
+                    showError('usersTable', 'Failed to delete user: ' + error.message);
+                }
+            }
+        }
+
+        async function deleteMineral(index) {
+            if (confirm('Are you sure you want to delete this mineral?')) {
+                try {
+                    const minerals = await loadCSV('../minerals.csv');
+                    minerals.splice(index, 1);
+                    downloadCSV('minerals.csv', minerals);
+                    showSuccess('Mineral deleted! Please replace the minerals.csv file with the downloaded file.');
+                    setTimeout(() => {
+                        loadAndRenderMinerals();
+                    }, 1000);
+                } catch (error) {
+                    showError('mineralsTable', 'Failed to delete mineral: ' + error.message);
+                }
+            }
+        }
+
+        async function deleteCountry(index) {
+            if (confirm('Are you sure you want to delete this country?')) {
+                try {
+                    const countries = await loadCSV('../countries.csv');
+                    countries.splice(index, 1);
+                    downloadCSV('countries.csv', countries);
+                    showSuccess('Country deleted! Please replace the countries.csv file with the downloaded file.');
+                    setTimeout(() => {
+                        loadAndRenderCountries();
+                    }, 1000);
+                } catch (error) {
+                    showError('countriesTable', 'Failed to delete country: ' + error.message);
+                }
+            }
+        }
+
+        async function deleteProduction(index) {
+            if (confirm('Are you sure you want to delete this production record?')) {
+                try {
+                    const production = await loadCSV('../production_stats.csv');
+                    production.splice(index, 1);
+                    downloadCSV('production_stats.csv', production);
+                    showSuccess('Production record deleted! Please replace the production_stats.csv file with the downloaded file.');
+                    setTimeout(() => {
+                        loadAndRenderProduction();
+                    }, 1000);
+                } catch (error) {
+                    showError('productionTable', 'Failed to delete production record: ' + error.message);
+                }
+            }
+        }
+
+        async function deleteSite(index) {
+            if (confirm('Are you sure you want to delete this site?')) {
+                try {
+                    const sites = await loadCSV('../sites.csv');
+                    sites.splice(index, 1);
+                    downloadCSV('sites.csv', sites);
+                    showSuccess('Site deleted! Please replace the sites.csv file with the downloaded file.');
+                    setTimeout(() => {
+                        loadAndRenderSites();
+                    }, 1000);
+                } catch (error) {
+                    showError('sitesTable', 'Failed to delete site: ' + error.message);
+                }
+            }
+        }
+
+        // Edit functions with inline editing
+        let currentEditData = {};
+
+        async function editUser(index) {
+            try {
+                const users = await loadCSV('../users.csv');
+                currentEditData.users = users;
+                currentEditData.editIndex = index;
+                renderUsersTableWithEdit(users, index);
+            } catch (error) {
+                showError('usersTable', 'Failed to load user data: ' + error.message);
+            }
+        }
+
+        async function editMineral(index) {
+            try {
+                const minerals = await loadCSV('../minerals.csv');
+                currentEditData.minerals = minerals;
+                currentEditData.editIndex = index;
+                renderMineralsTableWithEdit(minerals, index);
+            } catch (error) {
+                showError('mineralsTable', 'Failed to load mineral data: ' + error.message);
+            }
+        }
+
+        async function editCountry(index) {
+            try {
+                const countries = await loadCSV('../countries.csv');
+                currentEditData.countries = countries;
+                currentEditData.editIndex = index;
+                renderCountriesTableWithEdit(countries, index);
+            } catch (error) {
+                showError('countriesTable', 'Failed to load country data: ' + error.message);
+            }
+        }
+
+        async function editProduction(index) {
+            try {
+                const production = await loadCSV('../production_stats.csv');
+                currentEditData.production = production;
+                currentEditData.editIndex = index;
+                renderProductionTableWithEdit(production, index);
+            } catch (error) {
+                showError('productionTable', 'Failed to load production data: ' + error.message);
+            }
+        }
+
+        async function editSite(index) {
+            try {
+                const sites = await loadCSV('../sites.csv');
+                currentEditData.sites = sites;
+                currentEditData.editIndex = index;
+                renderSitesTableWithEdit(sites, index);
+            } catch (error) {
+                showError('sitesTable', 'Failed to load site data: ' + error.message);
+            }
+        }
+
+        // Render tables with edit mode
+        function renderUsersTableWithEdit(users, editIndex) {
+            const tableContainer = document.getElementById('usersTable');
+            
+            let html = '<table><thead><tr>';
+            const headers = Object.keys(users[0]);
+            headers.forEach(header => {
+                html += `<th>${header}</th>`;
+            });
+            html += '<th>Actions</th>';
+            html += '</tr></thead><tbody>';
+            
+            users.forEach((user, index) => {
+                if (index === editIndex) {
+                    html += '<tr>';
+                    headers.forEach(header => {
+                        html += `<td><input type="text" class="editable-input" id="edit-${header}-${index}" value="${user[header] || ''}"></td>`;
+                    });
+                    html += `<td>
+                        <div class="action-buttons">
+                            <button class="btn btn-save" onclick="saveUserEdit(${index})">Save</button>
+                            <button class="btn btn-cancel" onclick="cancelUserEdit()">Cancel</button>
+                        </div>
+                    </td>`;
+                    html += '</tr>';
+                } else {
+                    html += '<tr>';
+                    headers.forEach(header => {
+                        html += `<td>${user[header] || '-'}</td>`;
+                    });
+                    html += `<td>
+                        <div class="action-buttons">
+                            <button class="btn btn-edit" onclick="editUser(${index})">Edit</button>
+                            <button class="btn btn-delete" onclick="deleteUser(${index})">Delete</button>
+                        </div>
+                    </td>`;
+                    html += '</tr>';
+                }
+            });
+            
+            html += '</tbody></table>';
+            tableContainer.innerHTML = html;
+        }
+
+        function renderMineralsTableWithEdit(minerals, editIndex) {
+            const tableContainer = document.getElementById('mineralsTable');
+            
+            let html = '<table><thead><tr>';
+            const headers = Object.keys(minerals[0]);
+            headers.forEach(header => {
+                html += `<th>${header}</th>`;
+            });
+            html += '<th>Actions</th>';
+            html += '</tr></thead><tbody>';
+            
+            minerals.forEach((mineral, index) => {
+                if (index === editIndex) {
+                    html += '<tr>';
+                    headers.forEach(header => {
+                        html += `<td><input type="text" class="editable-input" id="edit-${header}-${index}" value="${mineral[header] || ''}"></td>`;
+                    });
+                    html += `<td>
+                        <div class="action-buttons">
+                            <button class="btn btn-save" onclick="saveMineralEdit(${index})">Save</button>
+                            <button class="btn btn-cancel" onclick="cancelMineralEdit()">Cancel</button>
+                        </div>
+                    </td>`;
+                    html += '</tr>';
+                } else {
+                    html += '<tr>';
+                    headers.forEach(header => {
+                        html += `<td>${mineral[header] || '-'}</td>`;
+                    });
+                    html += `<td>
+                        <div class="action-buttons">
+                            <button class="btn btn-edit" onclick="editMineral(${index})">Edit</button>
+                            <button class="btn btn-delete" onclick="deleteMineral(${index})">Delete</button>
+                        </div>
+                    </td>`;
+                    html += '</tr>';
+                }
+            });
+            
+            html += '</tbody></table>';
+            tableContainer.innerHTML = html;
+        }
+
+        function renderCountriesTableWithEdit(countries, editIndex) {
+            const tableContainer = document.getElementById('countriesTable');
+            
+            let html = '<table><thead><tr>';
+            const headers = Object.keys(countries[0]);
+            headers.forEach(header => {
+                html += `<th>${header}</th>`;
+            });
+            html += '<th>Actions</th>';
+            html += '</tr></thead><tbody>';
+            
+            countries.forEach((country, index) => {
+                if (index === editIndex) {
+                    html += '<tr>';
+                    headers.forEach(header => {
+                        html += `<td><input type="text" class="editable-input" id="edit-${header}-${index}" value="${country[header] || ''}"></td>`;
+                    });
+                    html += `<td>
+                        <div class="action-buttons">
+                            <button class="btn btn-save" onclick="saveCountryEdit(${index})">Save</button>
+                            <button class="btn btn-cancel" onclick="cancelCountryEdit()">Cancel</button>
+                        </div>
+                    </td>`;
+                    html += '</tr>';
+                } else {
+                    html += '<tr>';
+                    headers.forEach(header => {
+                        html += `<td>${country[header] || '-'}</td>`;
+                    });
+                    html += `<td>
+                        <div class="action-buttons">
+                            <button class="btn btn-edit" onclick="editCountry(${index})">Edit</button>
+                            <button class="btn btn-delete" onclick="deleteCountry(${index})">Delete</button>
+                        </div>
+                    </td>`;
+                    html += '</tr>';
+                }
+            });
+            
+            html += '</tbody></table>';
+            tableContainer.innerHTML = html;
+        }
+
+        function renderProductionTableWithEdit(production, editIndex) {
+            const tableContainer = document.getElementById('productionTable');
+            
+            let html = '<table><thead><tr>';
+            const headers = Object.keys(production[0]);
+            headers.forEach(header => {
+                html += `<th>${header}</th>`;
+            });
+            html += '<th>Actions</th>';
+            html += '</tr></thead><tbody>';
+            
+            production.forEach((prod, index) => {
+                if (index === editIndex) {
+                    html += '<tr>';
+                    headers.forEach(header => {
+                        html += `<td><input type="text" class="editable-input" id="edit-${header}-${index}" value="${prod[header] || ''}"></td>`;
+                    });
+                    html += `<td>
+                        <div class="action-buttons">
+                            <button class="btn btn-save" onclick="saveProductionEdit(${index})">Save</button>
+                            <button class="btn btn-cancel" onclick="cancelProductionEdit()">Cancel</button>
+                        </div>
+                    </td>`;
+                    html += '</tr>';
+                } else {
+                    html += '<tr>';
+                    headers.forEach(header => {
+                        html += `<td>${prod[header] || '-'}</td>`;
+                    });
+                    html += `<td>
+                        <div class="action-buttons">
+                            <button class="btn btn-edit" onclick="editProduction(${index})">Edit</button>
+                            <button class="btn btn-delete" onclick="deleteProduction(${index})">Delete</button>
+                        </div>
+                    </td>`;
+                    html += '</tr>';
+                }
+            });
+            
+            html += '</tbody></table>';
+            tableContainer.innerHTML = html;
+        }
+
+        function renderSitesTableWithEdit(sites, editIndex) {
+            const tableContainer = document.getElementById('sitesTable');
+            
+            let html = '<table><thead><tr>';
+            const headers = Object.keys(sites[0]);
+            headers.forEach(header => {
+                html += `<th>${header}</th>`;
+            });
+            html += '<th>Actions</th>';
+            html += '</tr></thead><tbody>';
+            
+            sites.forEach((site, index) => {
+                if (index === editIndex) {
+                    html += '<tr>';
+                    headers.forEach(header => {
+                        html += `<td><input type="text" class="editable-input" id="edit-${header}-${index}" value="${site[header] || ''}"></td>`;
+                    });
+                    html += `<td>
+                        <div class="action-buttons">
+                            <button class="btn btn-save" onclick="saveSiteEdit(${index})">Save</button>
+                            <button class="btn btn-cancel" onclick="cancelSiteEdit()">Cancel</button>
+                        </div>
+                    </td>`;
+                    html += '</tr>';
+                } else {
+                    html += '<tr>';
+                    headers.forEach(header => {
+                        html += `<td>${site[header] || '-'}</td>`;
+                    });
+                    html += `<td>
+                        <div class="action-buttons">
+                            <button class="btn btn-edit" onclick="editSite(${index})">Edit</button>
+                            <button class="btn btn-delete" onclick="deleteSite(${index})">Delete</button>
+                        </div>
+                    </td>`;
+                    html += '</tr>';
+                }
+            });
+            
+            html += '</tbody></table>';
+            tableContainer.innerHTML = html;
+        }
+
+        // Save edit functions
+        function saveUserEdit(index) {
+            const headers = Object.keys(currentEditData.users[0]);
+            headers.forEach(header => {
+                const value = document.getElementById(`edit-${header}-${index}`).value;
+                currentEditData.users[index][header] = value;
+            });
+            
+            downloadCSV('users.csv', currentEditData.users);
+            showSuccess('User updated! Please replace the users.csv file with the downloaded file.');
+            setTimeout(() => {
+                loadAndRenderUsers();
+            }, 1000);
+        }
+
+        function saveMineralEdit(index) {
+            const headers = Object.keys(currentEditData.minerals[0]);
+            headers.forEach(header => {
+                const value = document.getElementById(`edit-${header}-${index}`).value;
+                currentEditData.minerals[index][header] = value;
+            });
+            
+            downloadCSV('minerals.csv', currentEditData.minerals);
+            showSuccess('Mineral updated! Please replace the minerals.csv file with the downloaded file.');
+            setTimeout(() => {
+                loadAndRenderMinerals();
+            }, 1000);
+        }
+
+        function saveCountryEdit(index) {
+            const headers = Object.keys(currentEditData.countries[0]);
+            headers.forEach(header => {
+                const value = document.getElementById(`edit-${header}-${index}`).value;
+                currentEditData.countries[index][header] = value;
+            });
+            
+            downloadCSV('countries.csv', currentEditData.countries);
+            showSuccess('Country updated! Please replace the countries.csv file with the downloaded file.');
+            setTimeout(() => {
+                loadAndRenderCountries();
+            }, 1000);
+        }
+
+        function saveProductionEdit(index) {
+            const headers = Object.keys(currentEditData.production[0]);
+            headers.forEach(header => {
+                const value = document.getElementById(`edit-${header}-${index}`).value;
+                currentEditData.production[index][header] = value;
+            });
+            
+            downloadCSV('production_stats.csv', currentEditData.production);
+            showSuccess('Production updated! Please replace the production_stats.csv file with the downloaded file.');
+            setTimeout(() => {
+                loadAndRenderProduction();
+            }, 1000);
+        }
+
+        function saveSiteEdit(index) {
+            const headers = Object.keys(currentEditData.sites[0]);
+            headers.forEach(header => {
+                const value = document.getElementById(`edit-${header}-${index}`).value;
+                currentEditData.sites[index][header] = value;
+            });
+            
+            downloadCSV('sites.csv', currentEditData.sites);
+            showSuccess('Site updated! Please replace the sites.csv file with the downloaded file.');
+            setTimeout(() => {
+                loadAndRenderSites();
+            }, 1000);
+        }
+
+        // Cancel edit functions
+        function cancelUserEdit() {
+            loadAndRenderUsers();
+        }
+
+        function cancelMineralEdit() {
+            loadAndRenderMinerals();
+        }
+
+        function cancelCountryEdit() {
+            loadAndRenderCountries();
+        }
+
+        function cancelProductionEdit() {
+            loadAndRenderProduction();
+        }
+
+        function cancelSiteEdit() {
+            loadAndRenderSites();
+        }
+
+        // Modal functions
+        function openAddUserModal() {
+            document.getElementById('addUserModal').classList.add('active');
+        }
+
+        function closeAddUserModal() {
+            document.getElementById('addUserModal').classList.remove('active');
+            document.getElementById('newUsername').value = '';
+            document.getElementById('newEmail').value = '';
+            document.getElementById('newPassword').value = '';
+            document.getElementById('newRoleID').value = '2';
+        }
+
+        async function saveNewUser() {
+            const username = document.getElementById('newUsername').value;
+            const email = document.getElementById('newEmail').value;
+            const password = document.getElementById('newPassword').value;
+            const roleId = document.getElementById('newRoleID').value;
+            
+            if (!username || !email || !password) {
+                alert('Please fill in all fields');
+                return;
+            }
+            
+            try {
+                const users = await loadCSV('../users.csv');
+                
+                // Generate new UserID (highest existing ID + 1)
+                const maxId = Math.max(...users.map(u => parseInt(u.UserID) || 0));
+                const newUserId = maxId + 1;
+                
+                const newUser = {
+                    UserID: newUserId.toString(),
+                    Username: username,
+                    Email: email,
+                    PasswordHash: password,
+                    RoleID: roleId
+                };
+                
+                users.push(newUser);
+                downloadCSV('users.csv', users);
+                
+                closeAddUserModal();
+                showSuccess('New user added! Please replace the users.csv file with the downloaded file.');
+                setTimeout(() => {
+                    loadAndRenderUsers();
+                }, 1000);
+            } catch (error) {
+                alert('Failed to add user: ' + error.message);
+            }
+        }
+
+        // Show success message
+        function showSuccess(message) {
+            const successDiv = document.getElementById('successMessage');
+            successDiv.textContent = message;
+            successDiv.classList.add('show');
+            successDiv.style.position = 'fixed';
+            successDiv.style.top = '80px';
+            successDiv.style.left = '50%';
+            successDiv.style.transform = 'translateX(-50%)';
+            successDiv.style.zIndex = '1001';
+            
+            setTimeout(() => {
+                successDiv.classList.remove('show');
+            }, 3000);
+        }
+
+        // Logout function
+        function logout() {
+            if (confirm('Are you sure you want to logout?')) {
+                window.location.href = './login.html';
+            }
+        }
+        function map() {
+           
+                window.location.href = './map.html';
+            
+        }
+
+        // Initialize dashboard
+        async function initializeDashboard() {
+            // Load all data in parallel
+            await Promise.allSettled([
+                loadAndRenderUsers(),
+                loadAndRenderMinerals(),
+                loadAndRenderCountries(),
+                loadAndRenderProduction(),
+                loadAndRenderSites(),
+                loadAndRenderRoles()
+            ]);
+        }
+
+        // Initialize on page load
+        window.addEventListener('DOMContentLoaded', initializeDashboard);
+    </script>
+</body>
+</html>
